@@ -5,18 +5,27 @@ function Cell(x, y, width, height, value) {
   this.height = height;
   this.value = value;
 
-  this.state = undefined;
+  this.state = -1;
 
   this.setState = (state) => this.state = state;
 
   this.draw = () => {
     stroke('#FFF');
     switch (this.state) {
-      case true:
+      case 0:
+        fill('#8b0000');
+        break;
+      case 1:
+        fill('#03a9f4');
+        break;
+      case 2:
         fill('#228b22');
         break;
-      case false:
-        fill('#8b0000');
+      case 3:
+        fill('#311b92');
+        break;
+      case 4:
+        fill('#ffc400');
         break;
       default:
         fill('#696969');
@@ -93,8 +102,25 @@ function Matrix(target) {
   }
 }
 
+function Solution(targVal, xIdx, yIdx) {
+  this.xIndex = xIdx;
+  this.yIndex = yIdx;
+  this.res;
+  this.target = targVal;
+  this.updateRes = (val) => {
+    if (this.res === undefined) this.res = val;
+    if(Math.abs(this.target - val.value) < Math.abs((this.target - this.res.value))) {
+      this.res = val;
+    }
+  };
+  this.setDone = () => {
+    this.res.setState(0);
+  }
+};
+
 let myMatrix;
 let target;
+let solution;
 
 function setup() {
   createCanvas(600, 600);
@@ -102,7 +128,6 @@ function setup() {
   myMatrix = new Matrix(target);
   myMatrix.orderArrays();
   myMatrix.fillCells();
-  console.log(myMatrix);
 }
 
 function draw() {
@@ -113,10 +138,37 @@ function draw() {
 let step = 0;
 
 function mousePressed() {
+  if (solution === undefined) {
+    solution = new Solution(target, myMatrix.x.length, myMatrix.y.length);
+  }
   algoritmo1(step, myMatrix.cells, target);
 }
-// Implement algorithm
-function algoritmo1(i, mat, val) {
+
+function algoritmo1(i, mat, targVal) {
+  if (solution.xIndex === 0 || solution.yIndex === 0) {
+    solution.setDone();
+    return;
+  }
   const currentRow = mat[i];
-  console.log(currentRow);
+  const lastVal = currentRow[solution.xIndex - 1];
+  if (lastVal.value < targVal) {
+    currentRow.slice(0, solution.xIndex - 1).forEach(c => c.setState(2));
+    lastVal.setState(3);
+    if (solution.yIndex > 0) solution.yIndex -= 1;
+    else solution.setDone();
+    step++;
+  } else if (lastVal.value > targVal) {
+    mat.slice(mat.length - solution.yIndex + 1, mat.length)
+      .forEach(row => {
+        const lastCell = row[solution.xIndex - 1];
+        lastCell.setState(1);
+      });
+    lastVal.setState(4);
+    if (solution.xIndex > 0) solution.xIndex -= 1;
+    else solution.setDone();
+  } else { // They are equal
+    lastVal.setState(0);
+  }
+  solution.updateRes(lastVal);
+  console.log(solution)
 }
